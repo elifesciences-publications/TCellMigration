@@ -964,7 +964,166 @@ def PSDs_overall(corr_times_dict, trajectory_dict_polar, ax):
 			#inset_ax.loglog(hz_frequencies[1:]*60, numpy.power(10,piecewise_linear(log_freqs, *fit_params_overall_normed_pl)), 'k')
 			#inset_ax.text(1,.1,'Normalized',horizontalalignment='center')
 
+def PSDs_overall_np(corr_times_dict, trajectory_dict_polar, ax):
+	
+	experiment_list = ['fish_T']
+	experiment_titles = ['D. rerio','M. musculus','Dictyostelium']
+
+	study_labels = ['This study','Gerard et al.','Dang et al.']
+	treatment_label_dict = {'control':'Control','rockout':'12 $\mu$M Rockout','Myo1g_KO':'Myo1g KO','Arp_KO':'Arpin KO','Arp_rescue':'Arpin rescue','WT':'WT'}
+	experiment_ind = 0
+
+	tmax = 100
+	traj_list = []
+	mean_speed_list = []
+
+	ttot = 100
+	hz_frequencies = 2*numpy.pi*(1/45)*numpy.arange(int(ttot/2))*1/ttot
+
+	for experiment in experiment_list:
 		
+		treatment_list = []
+		treatment_label_list = []
+		for treatment in corr_times_dict[experiment]:
+			if 'control' in treatment and 'highfreq' not in treatment:
+				for sample in trajectory_dict_polar[experiment][treatment]:
+					
+					for traj_ind in trajectory_dict_polar[experiment][treatment][sample]:
+						
+						traj_data = numpy.array(trajectory_dict_polar[experiment][treatment][sample][traj_ind]).T
+						
+						if (traj_data[-1,0] - traj_data[0,0])/45 > tmax and numpy.sum(numpy.isnan(traj_data)) < .5:
+							traj_list.append((sample,traj_ind))
+							mean_speed_list.append(numpy.mean(traj_data[:,1]))
+			
+				len_pvec = int(ttot/2)
+				
+				
+				power_list = []
+				power_norm_list = []
+				powerx_list = []
+				norm_factor_list = []
+				var_list = []
+				for traj_tuple in traj_list:
+					
+					sample = traj_tuple[0]
+					traj_ind = traj_tuple[1]
+					
+					interval = .75
+					
+					#interval_freqs = hz_frequencies*interval
+				
+					traj_data = numpy.array(trajectory_dict_polar[experiment][treatment][sample][traj_ind]).T
+					
+					times = traj_data[:,0]/45
+					vx = traj_data[:,1]*numpy.cos(traj_data[:,2])/interval
+					vy = traj_data[:,1]*numpy.sin(traj_data[:,2])/interval
+					
+					vx_norm = numpy.cos(traj_data[:,2])
+					vy_norm = numpy.sin(traj_data[:,2])
+					
+					T = int(times[-1]-times[0])
+					
+					times = (traj_data[:,0] - traj_data[0,0])/45 ####Start all trajectories at t=0; ft is invariant under a translation in time
+							
+							
+					###in case there are missing timepoints, interpolate the speeds vector from tp0 to tptmax
+						
+					#temp_vx = interpolate.interp1d(times,vx)
+					#temp_vy = interpolate.interp1d(times,vy)
+							
+					vx_vec = vx
+					vy_vec = vy
+							
+					####Zero pad out to ttot timepoints for shorter trajectories. (Note that we will need to be careful with the normalization to preserve the correct amplitude)
+							
+					#if T < ttot:
+					#	nadd = ttot - T
+					#	vx_vec = numpy.concatenate((vx_vec, numpy.zeros((nadd,)) ))
+					#	vy_vec = numpy.concatenate((vy_vec, numpy.zeros((nadd,)) ))
+								
+					vx_fft = numpy.fft.fft(vx_vec)
+					vy_fft = numpy.fft.fft(vy_vec)	
+					
+					powerx = numpy.zeros((len_pvec,),dtype='float')
+							
+					powerx[0] = 1/ttot**2*2*numpy.absolute(vx_fft[0])**2
+					powerx[len_pvec-1] = 1/ttot**2*2*numpy.absolute(vx_fft[len_pvec-1])**2
+							
+					for k in range(1,len_pvec-1):
+						powerx[k] = 1/ttot**2*(numpy.absolute(vx_fft[k])**2 + numpy.absolute(vx_fft[ttot-k])**2)
+					
+					powery = numpy.zeros((len_pvec,),dtype='float')
+							
+					powery[0] = 1/ttot**2*2*numpy.absolute(vy_fft[0])**2
+					powery[len_pvec-1] = 1/ttot**2*2*numpy.absolute(vy_fft[len_pvec-1])**2
+							
+					for k in range(1,len_pvec-1):
+						powery[k] = 1/ttot**2*(numpy.absolute(vy_fft[k])**2 + numpy.absolute(vy_fft[ttot-k])**2)
+					
+					power_list.append(powerx+powery)
+					norm_factor_list.append(ttot/T)
+					
+					####
+					#if T < ttot:
+					#	nadd = ttot - T
+					#	vx_norm = numpy.concatenate((vx_norm, numpy.zeros((nadd,)) ))
+					#	vy_norm = numpy.concatenate((vy_norm, numpy.zeros((nadd,)) ))
+								
+					vx_fft_norm = numpy.fft.fft(vx_norm)
+					vy_fft_norm = numpy.fft.fft(vy_norm)	
+						
+					powerx_norm = numpy.zeros((len_pvec,),dtype='float')
+							
+					powerx_norm[0] = 1/ttot**2*2*numpy.absolute(vx_fft_norm[0])**2
+					powerx_norm[len_pvec-1] = 1/ttot**2*2*numpy.absolute(vx_fft_norm[len_pvec-1])**2
+							
+					for k in range(1,len_pvec-1):
+						powerx_norm[k] = 1/ttot**2*(numpy.absolute(vx_fft_norm[k])**2 + numpy.absolute(vx_fft_norm[ttot-k])**2)
+					
+					powery_norm = numpy.zeros((len_pvec,),dtype='float')
+							
+					powery_norm[0] = 1/ttot**2*2*numpy.absolute(vy_fft_norm[0])**2
+					powery_norm[len_pvec-1] = 1/ttot**2*2*numpy.absolute(vy_fft_norm[len_pvec-1])**2
+							
+					for k in range(1,len_pvec-1):
+						powery_norm[k] = 1/ttot**2*(numpy.absolute(vy_fft_norm[k])**2 + numpy.absolute(vy_fft_norm[ttot-k])**2)
+					
+					power_norm_list.append(powerx_norm+powery_norm)
+					####
+					
+			power_norm_array = numpy.array(power_norm_list)
+			
+			power_array = numpy.array(power_list)
+			norm_factor_array = numpy.array(norm_factor_list)
+			
+			psd_overall = numpy.sum(power_array, axis=0)/numpy.sum(norm_factor_array)
+			psd_overall_normed = numpy.sum(power_norm_array, axis=0)/numpy.sum(norm_factor_array)
+			nx,ny = power_array.shape
+			#psd_overall_normed = numpy.sum(power_array/numpy.tile(numpy.array(var_list),(ny,1)).T, axis=0)/numpy.sum(norm_factor_array)
+			
+			log_freqs = numpy.log10(hz_frequencies[1:]*60)
+			
+			#####Piecewise linear fits
+			fit_params_overall_pl = curve_fit(piecewise_linear,log_freqs,numpy.log10(psd_overall[1:]),p0=[-1,-1.5,0,-.5])[0]
+			fit_params_overall_normed_pl = curve_fit(piecewise_linear,log_freqs,numpy.log10(psd_overall_normed[1:]),p0=[-1,-1.5,0,-.5])[0]
+
+			#fit_params_lorentz_normed = curve_fit(Lorentzian_with_noise,hz_frequencies[1:]*60,psd_overall_normed[1:])[0]
+			#fit_params_lorentz_overall = curve_fit(Lorentzian_with_noise,hz_frequencies[1:]*60,numpy.log10(psd_overall[1:]))[0]
+			
+			ax.loglog(hz_frequencies[1:]*60, psd_overall[1:],'o',markersize=3,alpha=.8)
+			#fit1,=ax.loglog(hz_frequencies[1:]*60, numpy.power(10,piecewise_linear(log_freqs, *fit_params_overall_pl)), 'k')
+			#fit1,=ax.loglog(hz_frequencies[1:]*60, Lorentzian_with_noise(hz_frequencies[1:]*60, *fit_params_lorentz_overall), 'k')
+			#fit1,=ax.loglog(hz_frequencies[1:20]*60, numpy.power(10,1.05*fit_params_overall_pl[1]*numpy.ones(len(hz_frequencies[1:20],))), 'k')
+			#fit2,=ax.loglog(hz_frequencies[10:]*60, numpy.power(10,linear_part2(log_freqs[9:], *fit_params_overall_pl)), 'k--')
+			#ax.set_ylim(2*10**-2,.4)
+			#ax.loglog(hz_frequencies[1:]*60, numpy.power(10,Lorentzian_with_noise(hz_frequencies[1:]*60, *fit_params_lorentz_overall)), 'k')
+			ax.set_xlabel('Frequency (1/min)')
+			#ax.legend([fit1,fit2],['Simple random walk','Levy flight'],loc="lower left",fontsize=9)
+			ax.set_ylabel(r'$\langle PSD(f) \rangle$')
+			#inset_ax.loglog(hz_frequencies[1:]*60, psd_overall_normed[1:],'o',markersize=3,alpha=.8)
+			#inset_ax.loglog(hz_frequencies[1:]*60, numpy.power(10,piecewise_linear(log_freqs, *fit_params_overall_normed_pl)), 'k')
+			#inset_ax.text(1,.1,'Normalized',horizontalalignment='center')		
 
 def PSDs_by_speed_class(speeds_dict, trajectory_dict_polar, ax):
 	
@@ -1565,7 +1724,7 @@ def MSD_v_speed(speeds_dict, corr_times_dict, drift_corrected_traj_dict, ax):
 		return numpy.log10(a*x**2*(x + b/a))
 	
 	def prw(x,a):
-		return numpy.log10(x**2) + a
+		return numpy.log10(a*x**2)
 	
 	def linmod(x,a,b):
 		return a*x + b
@@ -1755,7 +1914,7 @@ def MSD_v_speed_deviations(speeds_dict, corr_times_dict, drift_corrected_traj_di
 		return numpy.log10(a*x**2*(x + b/a))
 	
 	def prw(x,a):
-		return numpy.log10(x**2) + a
+		return numpy.log10(a*x**2)
 	
 	def linmod(x,a,b):
 		return a*x + b

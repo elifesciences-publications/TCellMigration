@@ -2,11 +2,11 @@ import numpy
 import matplotlib.pylab as pt
 from scipy.stats import binned_statistic
 import simulate_spc_model
-import data_import_and_basic_calculations
+import data_import_and_basic_calculations_09202019
 
-master_trajectory_dict, trajectory_dict_polar, trajectory_dict_polar_interp, speeds_dict, corr_times_dict, corr_lengths_dict, relative_angle_dict = data_import_and_basic_calculations.import_data_and_measure( 'master_trajectory_file_all_experiments.txt' )
+master_trajectory_dict, trajectory_dict_polar, trajectory_dict_polar_interp, speeds_dict, corr_times_dict, corr_lengths_dict, relative_angle_dict = data_import_and_basic_calculations_09202019.import_data_and_measure( 'master_trajectory_file_all_experiments.txt' )
 
-fig,((ax1,ax2,ax3),(ax4,ax5,ax6)) = pt.subplots(2,3,figsize=(7.5,6.5),sharey='all')
+fig,((ax1,ax2,ax3),(ax4,ax5,ax6)) = pt.subplots(2,3,figsize=(9,6.5),sharey='all')
 
 ###Measure the list of mean speeds and persistence times in the data; also measure <cos\theta>_cell
 
@@ -208,4 +208,4 @@ ax5.set_title('S and P uncorrelated',fontsize=10)
 ax6.set_title('S and P uncorrelated with noise',fontsize=10)
 ax2.set_title('SPC with noise',fontsize=10)
 pt.tight_layout()
-pt.savefig('/mnt/c/Users/ejerison/Dropbox/imaging_data/figures/empirical_sims_v1.pdf')
+pt.savefig('/Users/ejerison/Dropbox/imaging_data/figures/empirical_sims_v1.pdf')

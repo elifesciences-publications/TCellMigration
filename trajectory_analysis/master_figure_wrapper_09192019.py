@@ -84,7 +84,7 @@ def plot_figure2(master_trajectory_dict, speeds_dict, step_angle_coupling_dict, 
 	####Give each panel plot a label
 	
 	
-	pt.savefig('/Users/ejerison/Dropbox/imaging_data/figures/paper_figures/Figure2_noE_09202019.pdf',bbox_inches='tight')
+	pt.savefig('/mnt/c/Users/ejerison/Dropbox/imaging_data/figures/paper_figures/Figure2_noE_09202019.pdf',bbox_inches='tight')
 
 def plot_figure2_subsampled(master_trajectory_dict, speeds_dict, step_angle_coupling_dict, trajectory_dict_polar_interp):
 	
@@ -154,7 +154,7 @@ def plot_figure2_subsampled(master_trajectory_dict, speeds_dict, step_angle_coup
 	####Give each panel plot a label
 	
 	
-	pt.savefig('/Users/ejerison/Dropbox/imaging_data/figures/paper_figures/Figure2_09202019.pdf',bbox_inches='tight')
+	pt.savefig('/mnt/c/Users/ejerison/Dropbox/imaging_data/figures/paper_figures/Figure2_09202019.pdf',bbox_inches='tight')
 	
 
 def plot_figure1(master_trajectory_dict, trajectory_dict_polar_interp, step_angle_coupling_dict):
@@ -224,7 +224,7 @@ def plot_figure1(master_trajectory_dict, trajectory_dict_polar_interp, step_angl
 		#ax.tick_params(axis='both', which='major', labelsize=8)
 		#ax.tick_params(axis='both', which='minor', labelsize=8)
 	#pt.tight_layout()	
-	pt.savefig('/Users/ejerison/Dropbox/imaging_data/figures/paper_figures/Figure1_BCD_09202019.pdf',bbox_inches='tight')
+	pt.savefig('/mnt/c/Users/ejerison/Dropbox/imaging_data/figures/paper_figures/Figure1_BCD_09202019.pdf',bbox_inches='tight')
 
 
 def plot_figure4_mouse_dicty(speeds_dict, corr_times_dict):
@@ -273,7 +273,7 @@ def plot_figure4_mouse_dicty(speeds_dict, corr_times_dict):
 	####Give each panel plot a label
 	my_axes[0].set_title('M. musculus',style='italic')
 	my_axes[1].set_title('Dictyostelium',style='italic')
-	pt.savefig('/Users/ejerison/Dropbox/imaging_data/figures/paper_figures/Figure4_mousedicty_09212019.pdf',bbox_inches='tight')
+	pt.savefig('/mnt/c/Users/ejerison/Dropbox/imaging_data/figures/paper_figures/Figure4_mousedicty_09212019.pdf',bbox_inches='tight')
 
 def plot_figure3_fish(speeds_dict, corr_times_dict):
 	
@@ -318,7 +318,7 @@ def plot_figure3_fish(speeds_dict, corr_times_dict):
 	
 	####Give each panel plot a label
 	
-	pt.savefig('/Users/ejerison/Dropbox/imaging_data/figures/paper_figures/Figure3_fish_rockout_09202019.pdf',bbox_inches='tight')
+	pt.savefig('/mnt/c/Users/ejerison/Dropbox/imaging_data/figures/paper_figures/Figure3_fish_rockout_09202019.pdf',bbox_inches='tight')
 
 
 def plot_manifold_3D(speeds_dict, step_angle_coupling_dict):
@@ -327,14 +327,14 @@ def plot_manifold_3D(speeds_dict, step_angle_coupling_dict):
 	my_ax = fig.add_subplot(111, projection='3d')
 	figure_panel_functions_09192019.all_cells_manifold_3d( step_angle_coupling_dict, speeds_dict, ax=my_ax )
 	#pt.show()
-	pt.savefig('/Users/ejerison/Dropbox/imaging_data/figures/paper_figures/Figure3D_manifold_09202019.pdf')
+	pt.savefig('/mnt/c/Users/ejerison/Dropbox/imaging_data/figures/paper_figures/Figure3D_manifold_09202019.pdf')
 
 def plot_manifold_3D_subsamp(speeds_dict, step_angle_coupling_dict):
 	fig = pt.figure(figsize=(5,5))
 	my_ax = fig.add_subplot(111, projection='3d')
 	figure_panel_functions_09192019.all_cells_manifold_3d( step_angle_coupling_dict, speeds_dict, ax=my_ax )
 	#pt.show()
-	pt.savefig('/Users/ejerison/Dropbox/imaging_data/figures/paper_figures/Figure3D_manifold_subsamp_09202019.pdf')
+	pt.savefig('/mnt/c/Users/ejerison/Dropbox/imaging_data/figures/paper_figures/Figure3D_manifold_subsamp_09202019.pdf')
 	
 
 def plot_anova(step_angle_coupling_dict, speeds_dict):
@@ -347,7 +347,7 @@ def plot_anova(step_angle_coupling_dict, speeds_dict):
 		ax = my_axes[i]
 		ax.text( -.1,1.06, panel_letters[i], fontsize=14, transform=ax.transAxes, fontname="Arial")
 		
-	pt.savefig('/Users/ejerison/Dropbox/imaging_data/figures/paper_figures/speed_angle_spline_for_anova_09202019.pdf',bbox_inches='tight')
+	pt.savefig('/mnt/c/Users/ejerison/Dropbox/imaging_data/figures/paper_figures/speed_angle_spline_for_anova_09202019.pdf',bbox_inches='tight')
 	
 def plot_figure3_pairedonly(speeds_dict, corr_times_dict):
 	
@@ -392,21 +392,27 @@ def plot_figure3_pairedonly(speeds_dict, corr_times_dict):
 	
 	####Give each panel plot a label
 	
-	pt.savefig('/Users/ejerison/Dropbox/imaging_data/figures/paper_figures/Figure3_fish_pairedonly_09202019.pdf',bbox_inches='tight')
+	pt.savefig('/mnt/c/Users/ejerison/Dropbox/imaging_data/figures/paper_figures/Figure3_fish_pairedonly_09202019.pdf',bbox_inches='tight')
 
+def plot_psd_np(corr_times_dict, trajectory_dict_polar_interp, step_angle_coupling_dict):
+	pt.figure()
+	ax = pt.gca()
+	figure_panel_functions_09192019.PSDs_overall_np(corr_times_dict, trajectory_dict_polar_interp, ax=ax)
+	pt.savefig('/mnt/c/Users/ejerison/Dropbox/imaging_data/figures/psd_np_check.pdf')
+	
 ###Call the appropriate figure functions to plot a figure!
 
 #plot_figure1(master_trajectory_dict, trajectory_dict_polar_interp, step_angle_coupling_dict)
 
-#plot_figure2(master_trajectory_dict,speeds_dict, step_angle_coupling_dict,trajectory_dict_polar_interp)
+plot_figure2(master_trajectory_dict,speeds_dict, step_angle_coupling_dict,trajectory_dict_polar_interp)
 #plot_figure2_subsampled(master_trajectory_dict_subsamp,speeds_dict_subsamp, step_angle_coupling_dict_subsamp,trajectory_dict_polar_interp_subsamp)
 #plot_manifold_3D(speeds_dict, step_angle_coupling_dict)
 #plot_manifold_3D_subsamp(speeds_dict_subsamp, step_angle_coupling_dict_subsamp)
 #plot_anova(step_angle_coupling_dict, speeds_dict)
 
-plot_figure3_fish(speeds_dict, corr_times_dict)
-plot_figure3_pairedonly(speeds_dict, corr_times_dict)
+#plot_figure3_fish(speeds_dict, corr_times_dict)
+#plot_figure3_pairedonly(speeds_dict, corr_times_dict)
 
-plot_figure4_mouse_dicty(speeds_dict, corr_times_dict)
-
+#plot_figure4_mouse_dicty(speeds_dict, corr_times_dict)
+#plot_psd_np(corr_times_dict, trajectory_dict_polar_interp, step_angle_coupling_dict)
 #figure_panel_functions_09192019.speed_dist_angle_dist_KS_test( speeds_dict, step_angle_coupling_dict )
