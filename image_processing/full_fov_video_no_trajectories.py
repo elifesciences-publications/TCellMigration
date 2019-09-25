@@ -36,11 +36,9 @@ def make_cell_movie(timeseries,output_base,timestep,ntmax):
 			# speed_grps.add(speed_grp)
 			# color_cycle[index] = colors[speed_grp]
 	# print(chosen_indexes)		
-	outfile_name = output_base + '_timeseries_lowres_lthresh.mp4'
+	outfile_name = output_base + '_timeseries_lowres.mp4'
 	image_data = io.imread(timeseries)
-	lower_thresh = numpy.percentile(image_data,20)
-	print(lower_thresh)
-	image_data = numpy.maximum(numpy.zeros_like(image_data),image_data - lower_thresh)
+	
 	ntsteps,nx,ny = image_data.shape
 	
 	ntsteps = min(ntsteps,ntmax)
