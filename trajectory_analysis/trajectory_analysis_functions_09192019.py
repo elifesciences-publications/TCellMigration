@@ -177,6 +177,48 @@ def calculate_corr_times_one_trajectory( time_intervals, thetas, overlap ):
 		corr_times = corr_times[:-1]
 	return corr_times
 
+def calculate_corr_times_one_trajectory_shallow( time_intervals, thetas, overlap ):
+
+	###Helper function for correlation_times_by_cell, for a portion of a trajectory
+	
+	i = 0
+	theta0 = thetas[0]
+	corr_times = []
+	corr_time = 0
+	if not overlap:
+		while i < len(thetas)-1.5:
+			
+			if numpy.abs(thetas[i+1] - theta0) < numpy.pi/6.:
+				corr_time += time_intervals[i]
+				
+			else:
+				
+				corr_times.append(corr_time)
+				theta0 = thetas[i+1]
+				corr_time = 0
+				
+			i += 1
+	else:
+		base_ind = 0
+		while i < len(thetas)-1.5:
+			
+			if numpy.abs(thetas[i+1] - theta0) < numpy.pi/6.:
+				corr_time += time_intervals[i]
+				
+			else:
+				
+				corr_times.append(corr_time)
+				base_ind += 1
+				theta0 = thetas[base_ind]
+				corr_time = 0
+				i = base_ind - 1
+				
+			i += 1
+	###Remove the final (potentially truncated) segment
+	if len(corr_times) > .5:
+		corr_times = corr_times[:-1]
+	return corr_times
+
 def calculate_corr_times_with_speeds( rs, time_intervals, thetas, overlap ):
 	###Helper function for correlation_times_by_cell, for a portion of a trajectory
 	
@@ -207,6 +249,55 @@ def calculate_corr_times_with_speeds( rs, time_intervals, thetas, overlap ):
 		while i < len(thetas)-1.5:
 			
 			if numpy.abs(thetas[i+1] - theta0) < numpy.pi/2.:
+				corr_time += time_intervals[i]
+				
+			else:
+				
+				corr_times.append(corr_time)
+				rlist.append(r0)
+				base_ind += 1
+				theta0 = thetas[base_ind]
+				r0 = rs[base_ind]
+				corr_time = 0
+				i = base_ind - 1
+				
+			i += 1
+	###Remove the final (potentially truncated) segment
+	if len(corr_times) > .5:
+		corr_times = corr_times[:-1]
+		rlist = rlist[:-1]
+	return numpy.array([rlist,corr_times])
+
+def calculate_corr_times_with_speeds_shallow( rs, time_intervals, thetas, overlap ):
+	###Helper function for correlation_times_by_cell, for a portion of a trajectory
+	
+	i = 0
+	theta0 = thetas[0]
+	corr_times = []
+	r0 = rs[0]
+	rlist = []
+	corr_time = 0
+	if not overlap:
+		
+		while i < len(thetas)-1.5:
+			
+			if numpy.abs(thetas[i+1] - theta0) < numpy.pi/6.:
+				corr_time += time_intervals[i]
+				
+			else:
+				
+				corr_times.append(corr_time)
+				rlist.append(r0)
+				theta0 = thetas[i+1]
+				r0 = rs[i+1]
+				corr_time = 0
+				
+			i += 1
+	else:
+		base_ind = 0
+		while i < len(thetas)-1.5:
+			
+			if numpy.abs(thetas[i+1] - theta0) < numpy.pi/6.:
 				corr_time += time_intervals[i]
 				
 			else:
@@ -301,7 +392,7 @@ def bout_lengthsx_one_trajectory( trajectory_polar, overlap = False ):
 	while i < len(xdirs)-1:
 		bout_len = x_lens[i]
 		j = i+1
-		while j<len(xdir_diffs)-1 and numpy.abs(xdir_diffs[j]) < .5:
+		while j<len(xdir_diffs) and numpy.abs(xdir_diffs[j-1]) < .5:
 			bout_len += x_lens[j]
 			j += 1
 		if j<len(xdirs):
@@ -390,6 +481,81 @@ def correlation_times_lengths_by_cell( trajectories_polar, calculation='times', 
 							corr_times = calculate_corr_times_one_trajectory( dts[seg[0]:seg[1]], thetas[seg[0]:seg[1]], overlap )
 						elif calculation == 'lengths':
 							corr_times = calculate_corr_lengths_one_trajectory( rs[seg[0]:seg[1]], thetas[seg[0]:seg[1]], overlap )
+					
+						if len(corr_times) > .5: ###There is at least one non-truncated bout in this trajectory segment
+							if traj_ind not in correlation_times_by_cell[experiment][treatment][sample]:
+								correlation_times_by_cell[experiment][treatment][sample][traj_ind] = []
+							correlation_times_by_cell[experiment][treatment][sample][traj_ind].extend(corr_times)
+					#speeds_by_cell[experiment][treatment][sample][traj_ind] = rs[dt_intervals<1.5]/dts[dt_intervals<1.5]*60		
+					
+					speeds_by_cell[experiment][treatment][sample][traj_ind] = numpy.array(rs_cons)/numpy.array(dts_cons)*60 ###Speeds in microns/min, measured on consecutive steps (secant approx)
+				
+	return correlation_times_by_cell, speeds_by_cell
+
+def correlation_times_lengths_by_cell_shallow( trajectories_polar, calculation='times', overlap=False ):
+	
+	###Calculate the correlation time or correlation length in non-overlapping intervals along each trajectory. For correlation length rather than time, use calculation='lengths'
+	
+	correlation_times_by_cell = {}
+	speeds_by_cell = {}
+	
+	for experiment in trajectories_polar:
+		correlation_times_by_cell[experiment] = {}
+		speeds_by_cell[experiment] = {}
+		for treatment in trajectories_polar[experiment]:
+			correlation_times_by_cell[experiment][treatment] = {}
+			speeds_by_cell[experiment][treatment] = {}
+			for sample in trajectories_polar[experiment][treatment]:
+				correlation_times_by_cell[experiment][treatment][sample] = {}
+				speeds_by_cell[experiment][treatment][sample] = {}
+				first_traj = True
+				for traj_ind in trajectories_polar[experiment][treatment][sample]:
+				
+					polar_traj = trajectories_polar[experiment][treatment][sample][traj_ind]
+					dts = polar_traj[3]
+					if min(dts) <= 0:
+						print(treatment,experiment,sample)
+						print(dts)
+					thetas = polar_traj[2]
+					rs = polar_traj[1]
+					
+					if first_traj:
+						interval = numpy.min(dts)
+						print(interval)
+						if interval <= 0:
+							print(dts)
+							print('Times not monotonic!',experiment,treatment,sample,traj_ind)
+							raise ValueError
+						first_traj = False
+					
+					dt_intervals = (dts/interval).astype('int')
+					#print(dt_intervals)	
+					####Find ranges within each trajectory where there are no missing timesteps
+					
+					skips = numpy.arange(len(dt_intervals))[dt_intervals > 1.5] ###Find all segments associated with one or more missing timepoints
+					consecutive_segs = []
+					initial_ind = 0
+					for skip in skips:
+						if skip - initial_ind > 2.5:
+							
+							final_ind = skip ###This is the final slice index to be used for the consecutive block
+							consecutive_segs.append([initial_ind,final_ind])
+						initial_ind = skip + 1
+					if len(skips) > .5 and initial_ind < len(dt_intervals)-1:
+						consecutive_segs.append([initial_ind,len(dt_intervals)])
+					if len(skips) < .5:
+						consecutive_segs.append([0,len(dt_intervals)])
+						
+					rs_cons = []
+					dts_cons = []
+					
+					for seg in consecutive_segs:
+						rs_cons.extend( rs[seg[0]:seg[1]] )
+						dts_cons.extend( dts[seg[0]:seg[1]] )
+						if calculation == 'times':
+							corr_times = calculate_corr_times_one_trajectory_shallow( dts[seg[0]:seg[1]], thetas[seg[0]:seg[1]], overlap )
+						elif calculation == 'lengths':
+							corr_times = calculate_corr_lengths_one_trajectory_shallow( rs[seg[0]:seg[1]], thetas[seg[0]:seg[1]], overlap )
 					
 						if len(corr_times) > .5: ###There is at least one non-truncated bout in this trajectory segment
 							if traj_ind not in correlation_times_by_cell[experiment][treatment][sample]:
