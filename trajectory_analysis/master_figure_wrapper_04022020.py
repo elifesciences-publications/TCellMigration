@@ -6,7 +6,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib
 import data_import_and_basic_calculations_09202019
 #import figure_panel_functions_11242019
-import figure_panel_functions_03082020
+import figure_panel_functions_04102020
 from mpl_toolkits.mplot3d import Axes3D
 
 ####This script is a top-level wrapper for paper figures. It first imports the trajectory data that is used in most figure panels; these data structures are passed to subfunctions in the figure_panel_functions_11242019.py library for plotting.
@@ -18,6 +18,7 @@ master_trajectory_dict_subsamp, trajectory_dict_polar_subsamp, trajectory_dict_p
 #for entry in corr_times_dict:
 #	print(entry,corr_times_dict[entry].keys())
 
+source_data_path = '/Users/ejerison/Dropbox/imaging_data/figures/revision_figures/source_data'
 def MSD_PSD_boutx_pooled_panels():
 	
 	#This is a wrapper for panels C-E in Figure 1
@@ -49,11 +50,11 @@ def MSD_PSD_boutx_pooled_panels():
 		my_axes.append(ax)
 	
 	print('Starting MSD calculation')
-	figure_panel_functions_03082020.MSD_overall(speeds_dict, master_trajectory_dict, ax=my_axes[0],inset_ax=my_axes[1])
+	figure_panel_functions_04102020.MSD_overall(speeds_dict, master_trajectory_dict, ax=my_axes[0],inset_ax=my_axes[1],source_data=source_data_path + '/Figure1c.txt')
 	print('Done calculating overall MSDs')
-	figure_panel_functions_03082020.PSDs_overall(corr_times_dict, trajectory_dict_polar_interp, ax=my_axes[2])
+	figure_panel_functions_04102020.PSDs_overall(corr_times_dict, trajectory_dict_polar_interp, ax=my_axes[2],source_data=source_data_path + '/Figure1d.txt')
 	print('Done calculating overall PSDs')
-	figure_panel_functions_03082020.boutx_distribution( speeds_dict,trajectory_dict_polar_interp,ax=my_axes[3])
+	figure_panel_functions_04102020.boutx_distribution( speeds_dict,trajectory_dict_polar_interp,ax=my_axes[3],source_data=source_data_path + '/Figure1e.txt')
 	print('Done calculating boutx')
 	
 	pt.savefig('/Users/ejerison/Dropbox/imaging_data/figures/revision_figures/Figure1_CDE_04012020.pdf',bbox_inches='tight')
@@ -108,7 +109,7 @@ def speed_angle_heterogeneity_panels():
 		ax = fig.add_axes(rect_loc)
 		my_axes.append(ax)
 	
-	figure_panel_functions_03082020.speed_angle_heterogeneity_panels_revised(speeds_dict, trajectory_dict_polar, step_angle_coupling_dict, axis_lists=[[my_axes[0],my_axes[1],my_axes[2]],[my_axes[3],my_axes[4],my_axes[5]],[my_axes[6],my_axes[7],my_axes[8]],[my_axes[9],my_axes[10],my_axes[11]]])
+	figure_panel_functions_04102020.speed_angle_heterogeneity_panels_revised(speeds_dict, trajectory_dict_polar, step_angle_coupling_dict, axis_lists=[[my_axes[0],my_axes[1],my_axes[2]],[my_axes[3],my_axes[4],my_axes[5]],[my_axes[6],my_axes[7],my_axes[8]],[my_axes[9],my_axes[10],my_axes[11]]],source_data_filename1=source_data_path + '/Figure2C.txt',source_data_filename2=source_data_path + '/Figure2D.txt',source_data_filename3=source_data_path + '/Figure2E.txt')
 	print('Done with speed heterogeneity')
 	
 	pt.tight_layout()	
@@ -119,7 +120,7 @@ def speed_decorrelation():
 	fig = pt.figure(figsize = (4,3))
 	
 	ax = pt.gca()
-	figure_panel_functions_03082020.speed_rank_corr(trajectory_dict_polar, speeds_dict, ax)
+	figure_panel_functions_04102020.speed_rank_corr(trajectory_dict_polar, speeds_dict, ax, source_data = source_data_path + '/Figure2B.txt')
 	print('finished with speed decorrelation')
 	pt.savefig('/Users/ejerison/Dropbox/imaging_data/figures/revision_figures/Figure2_B_04022020.pdf',bbox_inches='tight')
 	
@@ -160,17 +161,17 @@ def speed_class_and_manifold():
 	
 	###Get speed classes
 	
-	speed_class_inds = figure_panel_functions_03082020.define_speed_classes( speeds_dict, step_angle_coupling_dict, master_trajectory_dict)
+	speed_class_inds = figure_panel_functions_04102020.define_speed_classes( speeds_dict, step_angle_coupling_dict, master_trajectory_dict)
 	
 	####Make each of the panel plots
 	
-	figure_panel_functions_03082020.turn_angles_by_speed_class( step_angle_coupling_dict, speeds_dict,speed_class_inds, ax = my_axes[0])
+	figure_panel_functions_04102020.turn_angles_by_speed_class( step_angle_coupling_dict, speeds_dict,speed_class_inds, ax = my_axes[0],source_data = source_data_path + '/Figure3A.txt')
 	print('finished with turn angle dist')
-	figure_panel_functions_03082020.speed_angle_coupling_by_speed_class( step_angle_coupling_dict, speeds_dict, 45, speed_class_inds, ax = my_axes[1])
+	figure_panel_functions_04102020.speed_angle_coupling_by_speed_class( step_angle_coupling_dict, speeds_dict, 45, speed_class_inds, ax = my_axes[1],source_data = source_data_path + '/Figure3B.txt')
 	print('finished with speed-angle coupling')
-	figure_panel_functions_03082020.MSDs_by_speed_class_fishonly(speeds_dict, step_angle_coupling_dict, master_trajectory_dict, speed_class_inds, ax = my_axes[2] )
+	figure_panel_functions_04102020.MSDs_by_speed_class_fishonly(speeds_dict, step_angle_coupling_dict, master_trajectory_dict, speed_class_inds, ax = my_axes[2],source_data = source_data_path + '/Figure3C.txt' )
 	print('finished with MSDs')
-	figure_panel_functions_03082020.all_cells_manifold_3d( step_angle_coupling_dict, speeds_dict, ax=my_axes[3] )
+	figure_panel_functions_04102020.all_cells_manifold_3d( step_angle_coupling_dict, speeds_dict, ax=my_axes[3],source_data = source_data_path + '/Figure3D.txt' )
 	print('finished 3D manifold')
 	
 	panel_letters = ['A','B','C','D']
@@ -228,11 +229,11 @@ def persistence_time_and_MSDvspeed():
 		my_axes.append(ax)
 		ax_counter += 1
 	
-	figure_panel_functions_03082020.persistence_time_binned_fishonly( corr_times_dict, speeds_dict, ax = my_axes[0] )
+	figure_panel_functions_04102020.persistence_time_binned_fishonly( corr_times_dict, speeds_dict, ax = my_axes[0],source_data = source_data_path + '/Figure4A.txt' )
 	print('finished with persistence time')
-	figure_panel_functions_03082020.MSD_v_speed(speeds_dict, corr_times_dict, master_trajectory_dict, ax = my_axes[1])
+	figure_panel_functions_04102020.MSD_v_speed(speeds_dict, corr_times_dict, master_trajectory_dict, ax = my_axes[1],source_data = source_data_path + '/Figure4B.txt')
 	print('finished with MSDs vs speed1')
-	figure_panel_functions_03082020.MSD_v_speed_deviations(speeds_dict, corr_times_dict, master_trajectory_dict, ax = my_axes[2])
+	figure_panel_functions_04102020.MSD_v_speed_deviations(speeds_dict, corr_times_dict, master_trajectory_dict, ax = my_axes[2])
 	print('finished with MSDs vs speed2')
 	
 	panel_letters = ['A','dummy','B','D','F','F','G','H','I','J','K','L']
@@ -259,7 +260,7 @@ def persistence_time_shallow(corr_times_shallow_dict,speeds_dict):
     
     pt.figure()
     ax = pt.gca()
-    figure_panel_functions_03082020.persistence_time_binned_shallowangle( corr_times_shallow_dict, speeds_dict, ax = ax )
+    figure_panel_functions_04102020.persistence_time_binned_shallowangle( corr_times_shallow_dict, speeds_dict, ax = ax )
     pt.savefig('/Users/ejerison/Dropbox/imaging_data/figures/revision_figures/Persistence_time_shallower_definition.pdf',bbox_inches='tight')
     
 
@@ -300,21 +301,21 @@ def plot_figure2_subsampled(master_trajectory_dict_ss, speeds_dict_ss, step_angl
 	
 	###Get speed classes
 	
-	speed_class_inds_ss = figure_panel_functions_03082020.define_speed_classes_subsamp( speeds_dict_ss, step_angle_coupling_dict_ss, master_trajectory_dict_ss)
+	speed_class_inds_ss = figure_panel_functions_04102020.define_speed_classes_subsamp( speeds_dict_ss, step_angle_coupling_dict_ss, master_trajectory_dict_ss)
 	
 	####Make each of the panel plots
 	
-	figure_panel_functions_03082020.turn_angles_by_speed_class( step_angle_coupling_dict_ss, speeds_dict_ss,speed_class_inds_ss, ax = my_axes[0])
+	figure_panel_functions_04102020.turn_angles_by_speed_class( step_angle_coupling_dict_ss, speeds_dict_ss,speed_class_inds_ss, ax = my_axes[0], source_data = source_data_path + '/Figure4_SuppA.txt')
 	print('finished with turn angle dist')
-	figure_panel_functions_03082020.speed_angle_coupling_by_speed_class( step_angle_coupling_dict_ss, speeds_dict_ss, 90, speed_class_inds_ss, ax = my_axes[1])
+	figure_panel_functions_04102020.speed_angle_coupling_by_speed_class( step_angle_coupling_dict_ss, speeds_dict_ss, 90, speed_class_inds_ss, ax = my_axes[1], source_data = source_data_path + '/Figure4_SuppB.txt')
 	print('finished with speed-angle coupling')
-	figure_panel_functions_03082020.persistence_time_binned_fishonly( corr_times_dict_ss, speeds_dict_ss, ax = my_axes[2] )
+	figure_panel_functions_04102020.persistence_time_binned_fishonly( corr_times_dict_ss, speeds_dict_ss, ax = my_axes[2], source_data = source_data_path + '/Figure4_SuppC.txt' )
 	print('finished with persistence time')
-	figure_panel_functions_03082020.MSDs_by_speed_class_fishonly_sub(speeds_dict_ss, step_angle_coupling_dict_ss, master_trajectory_dict_ss, speed_class_inds_ss, ax = my_axes[3] )
+	figure_panel_functions_04102020.MSDs_by_speed_class_fishonly_sub(speeds_dict_ss, step_angle_coupling_dict_ss, master_trajectory_dict_ss, speed_class_inds_ss, ax = my_axes[3] )
 	print('finished with MSDs')
-	figure_panel_functions_03082020.MSD_v_speed(speeds_dict_ss, corr_times_dict_ss, master_trajectory_dict_ss, ax = my_axes[4])
+	figure_panel_functions_04102020.MSD_v_speed(speeds_dict_ss, corr_times_dict_ss, master_trajectory_dict_ss, ax = my_axes[4], source_data = source_data_path + '/Figure4_SuppF.txt')
 	print('finished with MSDs vs speed1')
-	figure_panel_functions_03082020.MSD_v_speed_deviations(speeds_dict_ss, corr_times_dict_ss, master_trajectory_dict_ss, ax = my_axes[5])
+	figure_panel_functions_04102020.MSD_v_speed_deviations(speeds_dict_ss, corr_times_dict_ss, master_trajectory_dict_ss, ax = my_axes[5])
 	print('finished with MSDs vs speed2')
 	
 	panel_letters = ['A','B','C','D','F','F','G','H','I','J','K','L']
@@ -362,9 +363,9 @@ def plot_figure5_mouse_dicty():
 	
 	####Make each of the panel plots
 	
-    figure_panel_functions_03082020.angle_speed_correlations_with_perturbations_all_cells( speeds_dict, step_angle_coupling_dict, experiment='fish_T', ax = my_axes[0], ax2 = my_axes[1])
-    figure_panel_functions_03082020.angle_speed_correlations_with_perturbations_all_cells( speeds_dict, step_angle_coupling_dict, experiment='Gerard_mouse_T', ax = my_axes[2], ax2 = my_axes[3])
-    figure_panel_functions_03082020.angle_speed_correlations_with_perturbations_all_cells( speeds_dict, step_angle_coupling_dict, experiment='Gautreau_dicty', ax = my_axes[4], ax2 = my_axes[5])
+    figure_panel_functions_04102020.angle_speed_correlations_with_perturbations_all_cells( speeds_dict, step_angle_coupling_dict, experiment='fish_T', ax = my_axes[0], ax2 = my_axes[1],source_data1 = source_data_path + '/Figure5A.txt',source_data2 = source_data_path + '/Figure5B.txt')
+    figure_panel_functions_04102020.angle_speed_correlations_with_perturbations_all_cells( speeds_dict, step_angle_coupling_dict, experiment='Gerard_mouse_T', ax = my_axes[2], ax2 = my_axes[3],source_data1 = source_data_path + '/Figure5C.txt',source_data2 = source_data_path + '/Figure5D.txt')
+    figure_panel_functions_04102020.angle_speed_correlations_with_perturbations_all_cells( speeds_dict, step_angle_coupling_dict, experiment='Gautreau_dicty', ax = my_axes[4], ax2 = my_axes[5],source_data1 = source_data_path + '/Figure5E.txt',source_data2 = source_data_path + '/Figure5F.txt')
 	
 	
     panel_letters = ['A','B','C','D','E','F','G','H','I']
@@ -387,21 +388,21 @@ def plot_manifold_3D():
 	###This is figure 2E, but the spacing comes out funny if it is included as a panel in figure 2
 	fig = pt.figure(figsize=(5,5))
 	my_ax = fig.add_subplot(111, projection='3d')
-	figure_panel_functions_03082020.all_cells_manifold_3d( step_angle_coupling_dict, speeds_dict, ax=my_ax )
+	figure_panel_functions_04102020.all_cells_manifold_3d( step_angle_coupling_dict, speeds_dict, ax=my_ax, source_data = source_data_path + '/Figure3D.txt')
 	#pt.show()
 	pt.savefig('/Users/ejerison/Dropbox/imaging_data/figures/revision_figures/Figure3D_manifold.pdf')
 
 def plot_manifold_3D_subsamp(speeds_dict_subsamp, step_angle_coupling_dict_subsamp):
 	fig = pt.figure(figsize=(5,5))
 	my_ax = fig.add_subplot(111, projection='3d')
-	figure_panel_functions_03082020.all_cells_manifold_3d( step_angle_coupling_dict_subsamp, speeds_dict_subsamp, ax=my_ax )
+	figure_panel_functions_04102020.all_cells_manifold_3d( step_angle_coupling_dict_subsamp, speeds_dict_subsamp, ax=my_ax, source_data = source_data_path + '/Figure4_SuppE.txt' )
 	#pt.show()
 	pt.savefig('/Users/ejerison/Dropbox/imaging_data/figures/revision_figures/Figure3D_manifold_subsamp.pdf')
 	
 
 def plot_anova():
 	fig, (ax1,ax2) = pt.subplots(1,2,figsize=(9,4))
-	figure_panel_functions_03082020.manifold_anova(step_angle_coupling_dict, speeds_dict, ax1, ax2 )
+	figure_panel_functions_04102020.manifold_anova(step_angle_coupling_dict, speeds_dict, ax1, ax2 )
 	panel_letters = ['A','B','C','D','E','F','G','H','I']
 	my_axes = [ax1,ax2]
 	for i in range(len(my_axes)):
@@ -441,7 +442,7 @@ def plot_figure5_pairedonly():
 	####Make each of the panel plots
 	
 	
-	figure_panel_functions_03082020.angle_speed_correlations_with_perturbations_paired_samples( speeds_dict, step_angle_coupling_dict, experiment='fish_T', ax = my_axes[0], ax2 = my_axes[1])
+	figure_panel_functions_04102020.angle_speed_correlations_with_perturbations_paired_samples( speeds_dict, step_angle_coupling_dict, experiment='fish_T', ax = my_axes[0], ax2 = my_axes[1])
 	
 	panel_letters = ['C','D','E','F','G','H','I']
 	
@@ -459,7 +460,7 @@ def plot_figure5_pairedonly():
 def plot_psd_np():
 	pt.figure()
 	ax = pt.gca()
-	figure_panel_functions_03082020.PSDs_overall_np(corr_times_dict, trajectory_dict_polar_interp, ax=ax)
+	figure_panel_functions_04102020.PSDs_overall_np(corr_times_dict, trajectory_dict_polar_interp, ax=ax)
 	pt.savefig('/Users/ejerison/Dropbox/imaging_data/figures/revision_figures/psd_np_check.pdf')
 
 def plot_msd_overall_shorter():
@@ -479,33 +480,32 @@ def plot_msd_overall_shorter():
 		ax = fig.add_axes(rect_loc)
 		my_axes.append(ax)
 	ax = pt.gca()
-	figure_panel_functions_03082020.MSD_overall_shorter(speeds_dict, master_trajectory_dict, ax=my_axes[0],inset_ax=my_axes[1])
+	figure_panel_functions_04102020.MSD_overall_shorter(speeds_dict, master_trajectory_dict, ax=my_axes[0],inset_ax=my_axes[1])
 	pt.savefig('/Users/ejerison/Dropbox/imaging_data/figures/revision_figures/Figure1_Supp1_MSDshorter.pdf',bbox_inches='tight')
 	
 ###Call the appropriate figure functions to plot a figure!
 
 #Figure 1
-MSD_PSD_boutx_pooled_panels()
+#MSD_PSD_boutx_pooled_panels()
 #Figure 2
 
-speed_angle_heterogeneity_panels()
+#speed_angle_heterogeneity_panels()
 
-speed_decorrelation()
+#speed_decorrelation()
 #Figure 3
 
-speed_class_and_manifold()
+#speed_class_and_manifold()
 #Figure 4
 
-persistence_time_and_MSDvspeed()
+#persistence_time_and_MSDvspeed()
 #Figure 5
 
 plot_figure5_mouse_dicty()
 
 
-plot_msd_overall_shorter()
+#plot_msd_overall_shorter()
 #plot_figure2_subsampled(master_trajectory_dict_subsamp,speeds_dict_subsamp, step_angle_coupling_dict_subsamp,trajectory_dict_polar_interp_subsamp,corr_times_dict_subsamp)
 
-plot_manifold_3D()
 #plot_manifold_3D_subsamp(speeds_dict_subsamp, step_angle_coupling_dict_subsamp)
 #plot_anova(step_angle_coupling_dict, speeds_dict)
 #plot_anova()
@@ -513,9 +513,6 @@ plot_manifold_3D()
 
 #plot_figure5_pairedonly()
 
-
-#plot_psd_np(corr_times_dict, trajectory_dict_polar_interp, step_angle_coupling_dict)
-#plot_psd_np()
-figure_panel_functions_03082020.speed_dist_angle_dist_KS_test( speeds_dict, step_angle_coupling_dict )
-#figure_panel_functions_03082020.speed_heterogeneity_linear_model( master_trajectory_dict, speeds_dict )
+#figure_panel_functions_04102020.speed_dist_angle_dist_KS_test( speeds_dict, step_angle_coupling_dict )
+#figure_panel_functions_04102020.speed_heterogeneity_linear_model( master_trajectory_dict, speeds_dict )
 #persistence_time_shallow(corr_times_shallow_dict,speeds_dict)

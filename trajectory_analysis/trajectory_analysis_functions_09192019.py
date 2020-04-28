@@ -677,7 +677,25 @@ def subsample_timepoints_time( sample_trajectories, target_interval ):
 				new_sample_trajectories[traj_ind].append( entry )
 	
 	return new_sample_trajectories
-	
+
+def calculate_MSDs_alt(sample_trajectories, tau):
+    msds = {}
+    for traj_ind in sample_trajectories:
+        track = numpy.array(sample_trajectories[traj_ind])
+        tint = numpy.min(track[1:,0]-track[:-1,0])
+        exp_gap = int(tau/tint)
+        #print(exp_gap)
+        for gap in range(exp_gap-4,exp_gap+1):
+            if gap > .5:
+                traj_disp = track[exp_gap:,:]-track[:-exp_gap,:]
+                corr_inds = numpy.where(numpy.abs(traj_disp[:,0]-tau)<5)[0]
+                if len(corr_inds) > .5:
+                    msd_track = traj_disp[corr_inds,1]**2 + traj_disp[corr_inds,2]**2
+                    if traj_ind not in msds:
+                        msds[traj_ind] = []
+                    msds[traj_ind].extend(msd_track)
+    return msds
+
 def calculate_MSDs( sample_trajectories, tau, overlap = False ):
 	
 	msds = {}

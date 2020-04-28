@@ -35,6 +35,14 @@ sample_list = 'singleTcell_RNA_seq/sample_filename_key.txt'
 diffexp_filename = 'data_analysis_03_20_2020/differential_expression.txt'
 diffexp_filename_tcells = 'data_analysis_03_20_2020/differential_expression_tcells.txt'
 
+###Output for source data (plotted points)
+
+sdata_umap = 'data_analysis_03_20_2020/Figure6A.txt'
+sdata_markers = 'data_analysis_03_20_2020/Figure6B.txt'
+sdata_corrs = 'data_analysis_03_20_2020/Figure6C.txt'
+sdata_actb2 = 'data_analysis_03_20_2020/Figure6D.txt'
+sdata_cdc42 = 'data_analysis_03_20_2020/Figure6E.txt'
+
 htseq_headers,htseq_indexes,htseq_data = utilities.import_tsv(htseq_input)
 sort_headers,sort_indexes,sort_data = utilities.import_tsv(sort_input)
 transcript_counts_logscale = numpy.log10( htseq_data.T/numpy.sum(htseq_data,axis=1)*10**6 + 1).T
@@ -42,22 +50,13 @@ transcript_counts_logscale = numpy.log10( htseq_data.T/numpy.sum(htseq_data,axis
 gene_translation_dict = utilities.translate_gene_names()
 htseq_headers_translated = utilities.translate_gene_list(htseq_headers,gene_translation_dict)
 
-####Processing: Use the SAM algorithm to project cells into 2D. Compare this clustering to the index sort data
+####Processing: Use UMAP to project cells into 2D. Compare this clustering to the index sort data
 
 thresh = .1
 
-#sam=SAM(counts=(htseq_data,htseq_headers,htseq_indexes))
-#sam.preprocess_data(sum_norm='cell_median',thresh=thresh) # log transforms and filters the data
-#sam.run(k=10) #run with default parameters
-
-#sam_cluster = hdbscan.HDBSCAN(min_samples=10).fit_predict(sam.adata.obsm['X_umap'])
-
-thresh = .1
 exp_genes = numpy.sum(transcript_counts_logscale > 10**(-4),axis=0)/transcript_counts_logscale.shape[0] > thresh
 standard_embedding = umap.UMAP(random_state=42).fit_transform(transcript_counts_logscale[:,exp_genes])
 sam_cluster = hdbscan.HDBSCAN(min_samples=10).fit_predict(standard_embedding)
-
-#fig,(ax1,ax2) = pt.subplots(1,2,figsize=(9,4))
 
 fig = pt.figure(figsize=(9,6.4))
 gs = fig.add_gridspec(5,2,wspace=.3,hspace=1.2)
@@ -67,7 +66,6 @@ ax2 = fig.add_subplot(gs[0:3,1])
 ax3 = fig.add_subplot(gs[3:,:])
 
 ax1.scatter(standard_embedding[:,0],standard_embedding[:,1], s=3, c=[cdict2[s] for s in sam_cluster])
-#ax1.scatter(sam.adata.obsm['X_umap'][:,0],sam.adata.obsm['X_umap'][:,1], s=3, c=sam_cluster)
 
 ax1.set_xlabel('UMAP 1')
 ax1.set_ylabel('UMAP 2')
@@ -80,7 +78,6 @@ ax2.set_ylabel('BSC-A')
 ax2.set_xlim(2*10**4,10**6)
 ax2.set_ylim(10**4,5*10**6)
 ax2.text( -.1,1.06, 'B', fontsize=14, transform=ax2.transAxes, fontname="Arial")
-#pt.savefig('data_analysis_03_20_2020/SAM_clusters_sort.pdf',bbox_inches='tight')
 
 bsc_sort_vals = utilities.get_gene_expression(sort_headers,sort_data,'BSC-A')
 
@@ -180,11 +177,12 @@ pt.savefig('data_analysis_03_20_2020/Tcells_others_sort_marker_genes.pdf',bbox_i
 diffexp_pvals = []
 diffexp_ratios = []
 for i in range(htseq_data.shape[1]):
-	s,p = scipy.stats.ranksums(htseq_data[Tcells,i],htseq_data[nonTcells,i])
-	diffexp_ratio =  (numpy.mean(transcript_counts_logscale[Tcells,i]) - numpy.mean(transcript_counts_logscale[nonTcells,i]))*numpy.log2(10)
-	diffexp_pvals.append(p)
-	diffexp_ratios.append(diffexp_ratio)
-diffexp_ratios = numpy.array(diffexp_ratios)	
+    s,p = scipy.stats.ranksums(htseq_data[Tcells,i],htseq_data[nonTcells,i])
+    diffexp_ratio =  (numpy.mean(transcript_counts_logscale[Tcells,i]) - numpy.mean(transcript_counts_logscale[nonTcells,i]))*numpy.log2(10)
+    diffexp_pvals.append(p)
+    diffexp_ratios.append(diffexp_ratio)
+
+diffexp_ratios = numpy.array(diffexp_ratios)
 diffexp_pvals = numpy.array(diffexp_pvals)
 n = 100
 diffexp_inds = numpy.argpartition(diffexp_pvals, n)[:n]
@@ -193,25 +191,67 @@ diffexp_genes = [htseq_headers_translated[i] for i in diffexp_inds]
 for i in diffexp_inds:
 	print(htseq_headers_translated[i], diffexp_ratios[i])
 
-diffexp_inds2 = numpy.argpartition(diffexp_pvals,100)[:100]
+diffexp_inds2 = numpy.argsort(numpy.abs(diffexp_ratios))[-800:]
 diffexp_genes2 = numpy.array([htseq_headers_translated[i] for i in diffexp_inds2])
 diffexp_pvals2 = diffexp_pvals[diffexp_inds2]
 diffexp_ratios2 = diffexp_ratios[diffexp_inds2]
 systematic_genes2 = numpy.array([htseq_headers[i] for i in diffexp_inds2])
 
-pval_sort_order = numpy.argsort(diffexp_pvals2)
+pval_sort_order = numpy.argsort(numpy.abs(diffexp_ratios2))[::-1]
 pvals_sorted = diffexp_pvals2[pval_sort_order]
 genes_sorted = diffexp_genes2[pval_sort_order]
 ratios_sorted = diffexp_ratios2[pval_sort_order]
 genes_syst_sorted = systematic_genes2[pval_sort_order]
 
+###Find the top differentially expressed genes for each cluster; make a list of the genes, p-values, and differential expression values
+
+grp1_genes = []
+grp2_genes = []
+grp1_gene_ids = []
+grp2_gene_ids = []
+grp1_ratios = []
+grp2_ratios = []
+grp1_pvals = []
+grp2_pvals = []
+
+for c in range(len(pvals_sorted)):
+    rat = ratios_sorted[c]
+    pval = pvals_sorted[c]*htseq_data.shape[1] ###Bonferonni correction
+    if rat > 0 and rat > numpy.log2(10) and pval < .01: ###recording genes with >= 10-fold change in geometric mean
+        grp1_pvals.append(pval)
+        grp1_ratios.append(rat)
+        if 'ensembl' in genes_sorted[c] or 'havana' in genes_sorted[c]:
+            grp1_genes.append('unnamed')
+        else:
+            grp1_genes.append(genes_sorted[c])
+        grp1_gene_ids.append(genes_syst_sorted[c])
+ 
+
+for c in range(len(pvals_sorted)):
+    rat = ratios_sorted[c]
+    pval = pvals_sorted[c]*htseq_data.shape[1] ###Bonferonni correction
+    if rat < 0 and numpy.abs(rat) > numpy.log2(10) and pval < .01: ###recording genes with >= 10-fold change in geometric mean
+        grp2_pvals.append(pval)
+        grp2_ratios.append(-1*rat)
+        if 'ensembl' in genes_sorted[c] or 'havana' in genes_sorted[c]:
+            grp2_genes.append('unnamed')
+        else:
+            grp2_genes.append(genes_sorted[c])
+        grp2_gene_ids.append(genes_syst_sorted[c])
+        
+
+
 diffexp_file = open(diffexp_filename,'w')
-diffexp_file.write(('\t').join(('Gene','Wilcoxon rank-sum p-value','Log10 expression difference (T cells vs. epithelial)')) + '\n')
-for i in range(len(genes_sorted)):
-	if 'ensembl' in genes_sorted[i] or 'havana' in genes_sorted[i] or 'si:' in genes_sorted[i]:
-		diffexp_file.write(genes_syst_sorted[i] + '\t' + str(pvals_sorted[i]) + '\t' + str(ratios_sorted[i]) + '\n')
-	else:
-		diffexp_file.write(genes_sorted[i] + '\t' + str(pvals_sorted[i]) + '\t' + str(ratios_sorted[i]) + '\n')
+diffexp_file.write('T cell cluster' + '\n')
+diffexp_file.write(('\t').join(('Gene name','Gene ID','Log2 differential expression ratio','Wilcoxon rank-sum p-value (Bonferroni-corrected)')) + '\n')
+for i in range(len(grp1_genes)):
+    fields = [grp1_genes[i],grp1_gene_ids[i],grp1_ratios[i],grp1_pvals[i]]
+    diffexp_file.write(('\t').join([str(f) for f in fields]) + '\n')
+diffexp_file.write('Epithelial cell cluster' + '\n')
+diffexp_file.write(('\t').join(('Gene name','Gene ID','Log2 differential expression ratio','Wilcoxon rank-sum p-value (Bonferroni-corrected)')) + '\n')
+for i in range(len(grp2_genes)):
+    fields = [grp2_genes[i],grp2_gene_ids[i],grp2_ratios[i],grp2_pvals[i]]
+    diffexp_file.write(('\t').join([str(f) for f in fields]) + '\n')
 diffexp_file.close()
 
 pt.figure()
@@ -222,10 +262,9 @@ for i in range(len(diffexp_inds)):
     gene_name = diffexp_genes[i]
     if not (gene_name.startswith('si') or gene_name.startswith('ensembl') or gene_name.startswith('havana')):
         ax.text(diffexp_ratios[ind],-numpy.log10(diffexp_pvals)[ind],diffexp_genes[i],fontsize=4)
-    #print(c1,c2,diffexp_ratios[ind],-numpy.log10(diffexp_pvals)[ind],diffexp_genes[i])
-#pt.title('Differential expr)
+    
 ax.set_xlabel('Log2 fold change between population geometric means')
-ax.set_ylabel(r'-Log$_{10}$p (Wilcoxon rank-sum test)')
+ax.set_ylabel(r'-Log$_{10}$p (Wilcoxon rank sum test)')
 pt.savefig('data_analysis_03_20_2020/diffexp_tcell_others.pdf')
 
 ###Rerun sam on the subset
@@ -243,11 +282,12 @@ file = open(sample_list,'r')
 snames = []
 wells = []
 pgroups = []
+index_sname_check_list = []
 for line in file:
     well,sname = line.strip().split('\t')
     snames.append(sname)
     wells.append(well)
-    if sname in  htseq_indexes_tcells1:
+    if sname in htseq_indexes_tcells1:
         if 'p1' in well:
             pgroups.append(0)
 
@@ -257,7 +297,12 @@ for line in file:
             pgroups.append(2)
         elif 'p4' in well:
             pgroups.append(3)
+        index_sname_check_list.append(sname)
 file.close()
+
+###Check index ordering
+index_sname_check_list = numpy.array(index_sname_check_list)
+print('Order check; number of order disagreements: ', numpy.sum(index_sname_check_list != htseq_indexes_tcells1))
 
 ###dummy figure for legend
 pt.figure()
@@ -272,7 +317,6 @@ pt.figure()
 ax = pt.gca()
 
 ax.scatter(samt.adata.obsm['X_umap'][:,0],samt.adata.obsm['X_umap'][:,1],c=[cdict[i] for i in pgroups],s=3)
-#ax.scatter(standard_embedding[:,0],standard_embedding[:,1],c=[cdict[i] for i in pgroups],s=3)
 
 ax.legend(symbol_list,['p1','p2','p3','p4'])
 ax.set_xlabel('UMAP 1')
@@ -323,12 +367,12 @@ if bigclust[0] != 0:
 inds_group1 = numpy.where(sam_clustert==0)[0]
 inds_group2 = numpy.where(sam_clustert==1)[0]
 
-transcript_counts_logscaleT = numpy.log10( htseq_data_tcells.T/numpy.sum(htseq_data_tcells,axis=1)*10**6 + 1).T
 
+transcript_counts_logscaleT = numpy.log10( htseq_data_tcells.T/numpy.sum(htseq_data_tcells,axis=1)*10**6 + 1).T
 
 diffexp_pvals = []
 diffexp_ratios = []
-for i in range(htseq_data.shape[1]):
+for i in range(htseq_data_tcells.shape[1]):
 	s,p = scipy.stats.ranksums(htseq_data_tcells[inds_group1,i],htseq_data_tcells[inds_group2,i])
 	diffexp_ratio =  (numpy.mean(transcript_counts_logscaleT[inds_group1,i]) - numpy.mean(transcript_counts_logscaleT[inds_group2,i]))*numpy.log2(10)
 	diffexp_pvals.append(p)
@@ -342,25 +386,67 @@ diffexp_genes = [htseq_headers_translated[i] for i in diffexp_inds]
 for i in diffexp_inds:
 	print(htseq_headers_translated[i], diffexp_ratios[i])
 
-diffexp_inds2 = numpy.argpartition(diffexp_pvals,100)[:100]
+diffexp_inds2 = numpy.argsort(numpy.abs(diffexp_ratios))[-800:]
 diffexp_genes2 = numpy.array([htseq_headers_translated[i] for i in diffexp_inds2])
 diffexp_pvals2 = diffexp_pvals[diffexp_inds2]
 diffexp_ratios2 = diffexp_ratios[diffexp_inds2]
 systematic_genes2 = numpy.array([htseq_headers[i] for i in diffexp_inds2])
 
-pval_sort_order = numpy.argsort(diffexp_pvals2)
-pvals_sorted = diffexp_pvals2[pval_sort_order]
-genes_sorted = diffexp_genes2[pval_sort_order]
-ratios_sorted = diffexp_ratios2[pval_sort_order]
-genes_syst_sorted = systematic_genes2[pval_sort_order]
+rat_sort_order = numpy.argsort(numpy.abs(diffexp_ratios2))[::-1]
+pvals_sorted = diffexp_pvals2[rat_sort_order]
+genes_sorted = diffexp_genes2[rat_sort_order]
+ratios_sorted = diffexp_ratios2[rat_sort_order]
+genes_syst_sorted = systematic_genes2[rat_sort_order]
+
+###Find the top differentially expressed genes for each cluster; make a list of the genes, p-values, and differential expression values
+
+grp1_genes = []
+grp2_genes = []
+grp1_gene_ids = []
+grp2_gene_ids = []
+grp1_ratios = []
+grp2_ratios = []
+grp1_pvals = []
+grp2_pvals = []
+
+for c in range(len(pvals_sorted)):
+    rat = ratios_sorted[c]
+    pval = pvals_sorted[c]*transcript_counts_logscaleT.shape[1] ##Bonferonni correction
+    if rat > 0 and rat > numpy.log2(10) and pval < .01: ###recording genes with >= 10-fold change in geometric mean
+        grp1_pvals.append(pval)
+        grp1_ratios.append(rat)
+        if 'ensembl' in genes_sorted[c] or 'havana' in genes_sorted[c]:
+            grp1_genes.append('unnamed')
+        else:
+            grp1_genes.append(genes_sorted[c])
+        grp1_gene_ids.append(genes_syst_sorted[c])
+ 
+
+for c in range(len(pvals_sorted)):
+    rat = ratios_sorted[c]
+    pval = pvals_sorted[c]*transcript_counts_logscaleT.shape[1] ##Bonferonni correction
+    if rat < 0 and numpy.abs(rat) > numpy.log2(10) and pval < .01: ###recording genes with >= 10-fold change in geometric mean
+        grp2_pvals.append(pval)
+        grp2_ratios.append(-1*rat)
+        if 'ensembl' in genes_sorted[c] or 'havana' in genes_sorted[c]:
+            grp2_genes.append('unnamed')
+        else:
+            grp2_genes.append(genes_sorted[c])
+        grp2_gene_ids.append(genes_syst_sorted[c])
+        
+
 
 diffexp_file = open(diffexp_filename_tcells,'w')
-diffexp_file.write(('\t').join(('Gene','Wilcoxon rank-sum p-value','Log10 expression difference (T cells cluster 1 vs. T cells cluster 2)')) + '\n')
-for i in range(len(genes_sorted)):
-	if 'ensembl' in genes_sorted[i] or 'havana' in genes_sorted[i] or 'si:' in genes_sorted[i]:
-		diffexp_file.write(genes_syst_sorted[i] + '\t' + str(pvals_sorted[i]) + '\t' + str(ratios_sorted[i]) + '\n')
-	else:
-		diffexp_file.write(genes_sorted[i] + '\t' + str(pvals_sorted[i]) + '\t' + str(ratios_sorted[i]) + '\n')
+diffexp_file.write('T cell cluster 1' + '\n')
+diffexp_file.write(('\t').join(('Gene name','Gene ID','Log2 differential expression ratio','Wilcoxon rank-sum p-value (Bonferroni-corrected)')) + '\n')
+for i in range(len(grp1_genes)):
+    fields = [grp1_genes[i],grp1_gene_ids[i],grp1_ratios[i],grp1_pvals[i]]
+    diffexp_file.write(('\t').join([str(f) for f in fields]) + '\n')
+diffexp_file.write('T cell cluster 2' + '\n')
+diffexp_file.write(('\t').join(('Gene name','Gene ID','Log2 differential expression ratio','Wilcoxon rank-sum p-value (Bonferroni-corrected)')) + '\n')
+for i in range(len(grp2_genes)):
+    fields = [grp2_genes[i],grp2_gene_ids[i],grp2_ratios[i],grp2_pvals[i]]
+    diffexp_file.write(('\t').join([str(f) for f in fields]) + '\n')
 diffexp_file.close()
 
 pt.figure()
@@ -371,10 +457,9 @@ for i in range(len(diffexp_inds)):
     gene_name = diffexp_genes[i]
     if not (gene_name.startswith('si') or gene_name.startswith('ensembl') or gene_name.startswith('havana')):
         ax.text(diffexp_ratios[ind],-numpy.log10(diffexp_pvals)[ind],diffexp_genes[i],fontsize=4)
-    #print(c1,c2,diffexp_ratios[ind],-numpy.log10(diffexp_pvals)[ind],diffexp_genes[i])
-#pt.title('Differential expr)
+    
 ax.set_xlabel('Log2 fold change between population geometric means')
-ax.set_ylabel(r'-Log$_{10}$p (Wilcoxon rank-sum test)')
+ax.set_ylabel(r'-Log$_{10}$p (Wilcoxon rank sum test)')
 pt.savefig('data_analysis_03_20_2020/diffexp_tcell_clusters.pdf')
 
 ###Display the clustering colors and a few marker genes
@@ -384,9 +469,18 @@ gs = fig.add_gridspec(2,3,wspace=.3,hspace=.3)
 
 ax = fig.add_subplot(gs[0,0])
 
+
+
 ax.scatter(samt.adata.obsm['X_umap'][:,0],samt.adata.obsm['X_umap'][:,1],c=[cdict[s] for s in sam_clustert],s=6)
 ax.set_xlabel('UMAP 1')
 ax.set_ylabel('UMAP 2')
+
+file = open(sdata_umap,'w')
+file.write('UMAP 1' + '\t' + (',').join([str(u) for u in samt.adata.obsm['X_umap'][:,0]]) + '\n')
+file.write('UMAP 2' + '\t' + (',').join([str(u) for u in samt.adata.obsm['X_umap'][:,1]]) + '\n')
+file.write('Cluster' + '\t' + (',').join([str(u) for u in sam_clustert]))
+file.close()                                         
+
 gene_common_names = ['ptprc','trac','tagapa','lcp2a','srgn','arpc1b','coro1a','wasb','capgb','scinlb','pde4ba','junbb','icn','fa2h','ccl38.1']
 ax.text(-.1,1.03,'A', transform=ax.transAxes)
 gene_list = ['ENSDARG00000071437','ENSDARG00000075807','ENSDARG00000002353','ENSDARG00000055955','ENSDARG00000077069','ENSDARG00000027063','ENSDARG00000054610','ENSDARG00000026350','ENSDARG00000099672','ENSDARG00000058348','ENSDARG00000032868','ENSDARG00000104773','ENSDARG00000009978','ENSDARG00000090063','ENSDARG00000041919']
@@ -401,9 +495,7 @@ for i in range(len(gene_list)):
     exp = utilities.get_gene_expression(htseq_headers,htseq_data_tcells_norm_log,gene)
     exp_list.append(exp)
 
-#exp_list.append(sam_clustert)
-#col_keys = gene_common_names
-#col_keys.append('cluster_assignment')
+
 
 exp_list = numpy.array(exp_list).T
 
@@ -412,10 +504,16 @@ df = pd.DataFrame(exp_list,columns=["GN"+str(g) for g in range(len(gene_common_n
 print(df)
 df["id"] = df.index
 df["cluster_assignment"] = sam_clustert
+                                          
 df_long = pd.wide_to_long(df,["GN"],i="id",j="gene")
 
 df_long["gene_exp"] = df_long.index.get_level_values("gene")
 
+###Rename df variables back to comprehensible gene names for the table
+gene_name_labels = [g + ' log10(CPM+1)' for g in gene_common_names]
+clist=["GN"+str(g) for g in range(len(gene_common_names))]
+df.rename(columns=dict(zip(clist,gene_name_labels)),inplace=True)
+df.to_csv(sdata_markers)
 print(df_long)
 
 ax = fig.add_subplot(gs[0,1:])
@@ -443,6 +541,7 @@ ax.set_xlabel('')
 ax.get_legend().remove()
 ax.set_ylabel(r'CPM+1')
 ax.text(-.1,1.03,'B', transform=ax.transAxes)
+
 ###Find the top correlates of arpc1b
 exp_genes = numpy.sum(htseq_data_tcells > .5,axis=0)/htseq_data_tcells.shape[0] > .2
 htseq_headers_exp = htseq_headers[exp_genes]
@@ -468,15 +567,19 @@ arpc1b_ps = numpy.array(arpc1b_ps)
 hist_bins = numpy.arange(-.4,.4,.02)
 arpc1b_corrs = numpy.array(arpc1b_corrs)
 ax = fig.add_subplot(gs[1,0])
-sns.distplot(arpc1b_corrs[corr_ranks[1:]],ax=ax,color='grey')
+sns.distplot(arpc1b_corrs[corr_ranks[1:]],ax=ax,color='grey',bins=hist_bins,norm_hist=True) ###Note that we are excluding arpc1b itself
 ax.set_xlabel(r'Spearman $\rho$ stat with arpc1b')
+histvals,binedges = numpy.histogram(arpc1b_corrs[corr_ranks[1:]],bins=hist_bins,density=True)                           
+file = open(sdata_corrs,'w')
+file.write('Spearman rank correlation statistic, bins' + '\t' + (',').join([str(s) for s in hist_bins]) + '\n')
+file.write('Histogram values' + '\t' + (',').join([str(s) for s in histvals]) + '\n')                                          
 ###Label top hits
 
 ntop = 4
 arpc1b_norm = numpy.log10(arpc1b_exp+1)
 exp_module_mat = []
 
-pval_labels = [r'p$<10^{-3}$',r'p$<10^{-3}$',r'p=.002',r'p=.002']
+pval_labels = [r'p$<10^{-3}$',r'p$<10^{-3}$',r'p=.002',r'p=.002'] ###Note that these are calculated in a permutation test in another script
 legend_label_list = []
 legend_symbol_list = []
 clist = ['C2','C3','C4','C5','C6','C7','C8']
@@ -485,9 +588,10 @@ for i in range(ntop):
     ind = corr_ranks[counter]
     gene_name = htseq_headers_trans_exp[ind]
     if gene_name.startswith('si'):
+        print(gene_name)
+        print(htseq_headers_exp[ind])
         gene_name = 'BX511128.3'
-    #c = i%nc
-    #r = int(numpy.floor(i/nc))
+    
     included_cells = numpy.logical_or(htseq_data_tcells_exp[:,ind]>.001,arpc1b_exp>.001)
     corr,p = scipy.stats.spearmanr(htseq_data_tcells_exp[included_cells,ind],arpc1b_exp[included_cells])
     #ax.text(corr,.5,gene_name + ', ' + pval_labels[i],rotation=90,horizontalalignment='center',fontsize=6)
@@ -495,14 +599,11 @@ for i in range(ntop):
     
     l=ax.axvline(corr,0,.05,color=clist[i])
     legend_symbol_list.append(l)
-    #if counter < 3.5:
-    #    ax.text(corr,.5,gene_name,rotation=90,horizontalalignment='center',fontsize=6)
-    #elif counter > 4.5:
-     #   ax.text(corr,.5,prev_gene_name+ ',' + gene_name,rotation=90,horizontalalignment='center',fontsize=6)
     
     prev_gene_name = gene_name
     exp_module_mat.append(numpy.log10(htseq_data_tcells_exp[:,ind]+1))
-
+    file.write(gene_name + '\t' + str(corr) + '\n')                                      
+file.close()
 #nbott = 1
 #for i in range(nbott):
 #    counter = i-1
@@ -563,6 +664,12 @@ l1 = sam_clustert == bigclust[0]
 l2 = sam_clustert != bigclust[0]
 ax.set_yscale('log')
 ax.set_xscale('log')
+                                          
+file = open(sdata_actb2,'w')
+file.write('actb2 expression (counts + 1)' + '\t' + (',').join([str(s) for s in actb2_exp+1]) + '\n')
+file.write('arpc1b expression (counts + 1)' + '\t' + (',').join([str(s) for s in arpc1b_exp+1]) + '\n')
+file.write('Cluster' + '\t' + (',').join([str(s) for s in sam_clustert]))
+file.close()                                          
 
 ax.scatter(cdc42l_exp[l1]+1,arpc1b_exp[l1]+1,c=[cdict[cl] for cl in sam_clustert[l1]],zorder=0,alpha=.8,s=6)
 ax.scatter(cdc42l_exp[l2]+1,arpc1b_exp[l2]+1,c=[cdict[cl] for cl in sam_clustert[l2]],zorder=0,alpha=.8,s=6)
@@ -571,5 +678,12 @@ ax.set_xlim([.8,5*10**4])
 #ax.set_ylabel('arpc1b expression')
 ax.set_xlabel('cdc42l expression')
 ax.text(-.1,1.03,'E', transform=ax.transAxes)
-pt.savefig('data_analysis_03_20_2020/Tcell_corrs_multipanel_trial.pdf',bbox_inches='tight')
+pt.savefig('data_analysis_03_20_2020/Tcell_corrs_multipanel_trial_check.pdf',bbox_inches='tight')
 pt.close()
+                                          
+file = open(sdata_cdc42,'w')
+file.write('cdc42l expression (counts + 1)' + '\t' + (',').join([str(s) for s in cdc42l_exp+1]) + '\n')
+file.write('arpc1b expression (counts + 1)' + '\t' + (',').join([str(s) for s in arpc1b_exp+1]) + '\n')
+file.write('Cluster' + '\t' + (',').join([str(s) for s in sam_clustert]))
+file.close()                                          
+                                          
