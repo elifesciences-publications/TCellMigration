@@ -4,7 +4,7 @@ from scipy.stats import binned_statistic
 import simulate_spc_model
 import data_import_and_basic_calculations_09202019
 
-master_trajectory_dict, trajectory_dict_polar, trajectory_dict_polar_interp, speeds_dict, corr_times_dict, corr_lengths_dict, relative_angle_dict = data_import_and_basic_calculations_09202019.import_data_and_measure( 'master_trajectory_file_all_experiments.txt' )
+master_trajectory_dict, trajectory_dict_polar, trajectory_dict_polar_interp, speeds_dict, corr_times_dict, corr_times_shallow_dict, corr_lengths_dict, relative_angle_dict = data_import_and_basic_calculations_09202019.import_data_and_measure( 'master_trajectory_file_all_experiments.txt' )
 
 fig,((ax1,ax2,ax3),(ax4,ax5,ax6)) = pt.subplots(2,3,figsize=(9,6.5),sharey='all')
 
@@ -174,11 +174,11 @@ mean_speeds = numpy.mean(disps_basept,axis=0)*4/3
 mean_corrts = numpy.array([numpy.mean(corrt_cell) for corrt_cell in corrts])*.75
 mean_cosangles = numpy.mean(dot_products,axis=0)
 
-ax1.set_ylim(.25,2.5)
-ax3.set_ylim(.25,2.5)
-ax3.set_ylim(.25,2.5)
-ax5.set_ylim(.25,2.5)
-ax6.set_ylim(.25,2.5)
+ax1.set_ylim(.25,2.53)
+ax3.set_ylim(.25,2.53)
+ax3.set_ylim(.25,2.53)
+ax5.set_ylim(.25,2.53)
+ax6.set_ylim(.25,2.53)
 ax1.set_xlim(0,15)
 ax3.set_xlim(0,15)
 ax3.set_xlim(0,15)
@@ -207,5 +207,13 @@ ax4.set_title('UPT with noise',fontsize=10)
 ax5.set_title('S and P uncorrelated',fontsize=10)
 ax6.set_title('S and P uncorrelated with noise',fontsize=10)
 ax2.set_title('SPC with noise',fontsize=10)
+
+ax1.text(-.1,1.1,'A',fontsize=12,transform=ax1.transAxes)
+ax2.text(-.1,1.1,'B',fontsize=12,transform=ax2.transAxes)
+ax3.text(-.1,1.1,'C',fontsize=12,transform=ax3.transAxes)
+ax4.text(-.1,1.1,'D',fontsize=12,transform=ax4.transAxes)
+ax5.text(-.1,1.1,'E',fontsize=12,transform=ax5.transAxes)
+ax6.text(-.1,1.1,'F',fontsize=12,transform=ax6.transAxes)
+
 pt.tight_layout()
-pt.savefig('/Users/ejerison/Dropbox/imaging_data/figures/empirical_sims_v1.pdf')
+pt.savefig('/Users/ejerison/Dropbox/imaging_data/figures/empirical_sims_v2.pdf')
